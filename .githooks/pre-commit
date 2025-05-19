@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+LC_ALL=C
+
+composer phpcbf src tests
