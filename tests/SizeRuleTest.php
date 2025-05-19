@@ -14,7 +14,7 @@ class SizeRuleTest extends TestCase
                 'v' => 1,
             ],
             validators: [
-                'v' => [Rules::size(0, 2)]
+                'v' => [Rules::size(min: 0, max: 2)]
             ]
         );
 
@@ -28,7 +28,7 @@ class SizeRuleTest extends TestCase
                 'v' => 'hello',
             ],
             validators: [
-                'v' => [Rules::size(2, 5)]
+                'v' => [Rules::size(min: 2, max: 5)]
             ]
         );
 

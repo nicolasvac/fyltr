@@ -20,58 +20,58 @@ class SizeRule implements RuleWithTranslations
         $minValue = $args[0] ?? null;
         $maxValue = $args[1] ?? null;
 
-        return match (gettype($value)) {
-            'integer', 'double' => $this->validateNumber($key, $value, $minValue, $maxValue),
-            'array', 'object' => $this->validateCollection($key, $value, $minValue, $maxValue),
-            'string' => $this->validateString($key, $value, $minValue, $maxValue),
-            default => $this->createFailedResult($key)
+        return match (gettype(value: $value)) {
+            'integer', 'double' => $this->validateNumber(key: $key, value: $value, minValue: $minValue, maxValue: $maxValue),
+            'array', 'object' => $this->validateCountable(key: $key, value: $value, minSize: $minValue, maxSize: $maxValue),
+            'string' => $this->validateString(key: $key, value: $value, minLength: $minValue, maxLength: $maxValue),
+            default => $this->createFailedResult(key: $key)
         };
     }
 
-    private function validateNumber(string $key, int|float $value, ?float $min, ?float $max): RuleResult
+    private function validateNumber(string $key, int|float $value, ?float $minValue, ?float $maxValue): RuleResult
     {
         $numericValue = (float)$value;
 
-        if ($min !== null && $numericValue < $min) {
-            return $this->createMinValidationError($key, $min);
+        if ($minValue !== null && $numericValue < $minValue) {
+            return $this->createMinValidationError(key: $key, min: $minValue);
         }
 
-        if ($max !== null && $numericValue > $max) {
-            return $this->createMaxValidationError($key, $max);
-        }
-
-        return new RuleResult(status: RuleResultStatus::Successful);
-    }
-
-    private function validateCollection(string $key, mixed $value, ?int $min, ?int $max): RuleResult
-    {
-        if (!is_countable($value)) {
-            return $this->createFailedResult($key);
-        }
-
-        $size = count($value);
-
-        if ($min !== null && $size < $min) {
-            return $this->createMinValidationError($key, $min);
-        }
-
-        if ($max !== null && $size > $max) {
-            return $this->createMaxValidationError($key, $max);
+        if ($maxValue !== null && $numericValue > $maxValue) {
+            return $this->createMaxValidationError(key: $key, max: $maxValue);
         }
 
         return new RuleResult(status: RuleResultStatus::Successful);
     }
 
-    private function validateString(string $key, string $value, ?int $min, ?int $max): RuleResult
+    private function validateCountable(string $key, mixed $value, ?int $minSize, ?int $maxSize): RuleResult
     {
-        $length = strlen($value);
-
-        if ($min !== null && $length < $min) {
-            return $this->createMinValidationError($key, $min);
+        if (!is_countable(value: $value)) {
+            return $this->createFailedResult(key: $key);
         }
 
-        if ($max !== null && $length > $max) {
-            return $this->createMaxValidationError($key, $max);
+        $size = count(value: $value);
+
+        if ($minSize !== null && $size < $minSize) {
+            return $this->createMinValidationError(key: $key, min: $minSize);
+        }
+
+        if ($maxSize !== null && $size > $maxSize) {
+            return $this->createMaxValidationError(key: $key, max: $maxSize);
+        }
+
+        return new RuleResult(status: RuleResultStatus::Successful);
+    }
+
+    private function validateString(string $key, string $value, ?int $minLength, ?int $maxLength): RuleResult
+    {
+        $length = strlen(string: $value);
+
+        if ($minLength !== null && $length < $minLength) {
+            return $this->createMinValidationError(key: $key, min: $minLength);
+        }
+
+        if ($maxLength !== null && $length > $maxLength) {
+            return $this->createMaxValidationError(key: $key, max: $maxLength);
         }
 
         return new RuleResult(status: RuleResultStatus::Successful);
@@ -81,7 +81,7 @@ class SizeRule implements RuleWithTranslations
     {
         return new RuleResult(
             status: RuleResultStatus::Failed,
-            errors: [$this->messages['errors.default']]
+            errors: [str_replace(search: ':key:', replace: $key, subject: $this->messages['errors.default'])]
         );
     }
 
@@ -89,7 +89,7 @@ class SizeRule implements RuleWithTranslations
     {
         return new RuleResult(
             status: RuleResultStatus::Failed,
-            errors: [$this->getMinErrorMessage($key, $min)]
+            errors: [$this->getMinErrorMessage(key: $key, minValue: $min)]
         );
     }
 
@@ -97,7 +97,7 @@ class SizeRule implements RuleWithTranslations
     {
         return new RuleResult(
             status: RuleResultStatus::Failed,
-            errors: [$this->getMaxErrorMessage($key, $max)]
+            errors: [$this->getMaxErrorMessage(key: $key, maxValue: $max)]
         );
     }
 

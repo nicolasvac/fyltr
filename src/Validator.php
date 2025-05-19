@@ -240,7 +240,7 @@ class Validator implements MiddlewareInterface
      */
     public static function inline(mixed $value, array $validators): ValidationResult
     {
-        return (new self(['value' => $value], ['value' => $validators]))->validate();
+        return (new self(inputs: ['value' => $value], validators: ['value' => $validators]))->validate();
     }
 
     /**
