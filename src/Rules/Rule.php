@@ -4,5 +4,5 @@ namespace Nicolasvac\Fyltr\Rules;
 
 interface Rule
 {
-    public function validate(string $key, mixed $value): RuleResult;
+    public function validate(string $key, mixed $value, array $args = []): RuleResult;
 }

@@ -2,9 +2,11 @@
 
 namespace Nicolasvac\Fyltr;
 
+use Nicolasvac\Fyltr\Exceptions\RuleInternalException;
 use Nicolasvac\Fyltr\Exceptions\ValidationKeyFoundMultipleTimes;
 use Nicolasvac\Fyltr\Rules\Rule;
 use Nicolasvac\Fyltr\Rules\RuleResultStatus;
+use Nicolasvac\Fyltr\Rules\RuleReturnsNumber;
 use Nicolasvac\Fyltr\Rules\RuleWithTranslations;
 use Nicolasvac\Fyltr\Translations\DefaultTranslationProvider;
 use Nicolasvac\Fyltr\Translations\TranslationProvider;
@@ -31,8 +33,8 @@ class Validator implements MiddlewareInterface
     /** @var ValidationResult|null The cached validation result object. */
     private ValidationResult|null $result;
 
-    /** @var TranslationProvider The default translations for the provider of messages. */
-    public static TranslationProvider $defaultTranslationProvider;
+    /** @var TranslationProvider|null The default translations for the provider of messages. */
+    public static TranslationProvider|null $defaultTranslationProvider = null;
 
     /** @var TranslationProvider The translations for the provider of messages. */
     private TranslationProvider $translationProvider;
@@ -103,8 +105,12 @@ class Validator implements MiddlewareInterface
         $this->result = null;
     }
 
-    private function parseValidation(): ValidationResult
+    /**
+     * @throws RuleInternalException
+     */
+    private function runValidation(): ValidationResult
     {
+        // Check if we have a cached result object available
         if ($this->result !== null) {
             return $this->result;
         }
@@ -122,14 +128,27 @@ class Validator implements MiddlewareInterface
                 $rule = new $rawRule['class'];
 
                 if ($rule instanceof RuleWithTranslations) {
-                    $rule->setErrorMessage(message: $this->translationProvider->ruleErrorMessage(rule: $rule));
+                    $ruleTranslations = $this->translationProvider->ruleTranslations(rule: $rule);
+
+                    if (count($ruleTranslations) === 0) {
+                        throw new RuleInternalException("No translations provided for rule {$rawRule['class']}");
+                    }
+
+                    $rule->setTranslations(messages: $ruleTranslations);
                 }
 
                 $valueToValidate = $this->inputs[$keyToValidate] ?? null;
 
-                $result = $rule->validate(key: $keyToValidate, value: $valueToValidate);
+                $result = $rule->validate(key: $keyToValidate, value: $valueToValidate, args: $rawRule['args'] ?? []);
 
-                if ($result->status !== RuleResultStatus::Successful) {
+                if ($result->status === RuleResultStatus::Successful) {
+                    // The rule was successful, so we can save the data for this key.
+                    $temporaryValidationResult['dataBag'][$keyToValidate][ValidationResultDataTypes::Raw->value] = $valueToValidate;
+
+                    if ($rule instanceof RuleReturnsNumber) {
+                        $temporaryValidationResult['dataBag'][$keyToValidate][ValidationResultDataTypes::Number->value] = $rule->getValidatedNumber();
+                    }
+                } else {
                     // Save the errors for this key.
                     if (!isset($temporaryValidationResult['errors'][$keyToValidate])) {
                         $temporaryValidationResult['errors'][$keyToValidate] = [];
@@ -139,15 +158,12 @@ class Validator implements MiddlewareInterface
                         $temporaryValidationResult['errors'][$keyToValidate],
                         $result->errors
                     );
-                } else {
-                    // The rule was successful, so we can save the data for this key.
-                    $temporaryValidationResult['dataBag'][$keyToValidate][ValidationResultDataTypes::Raw->value] = $valueToValidate;
-                }
 
-                // If the rule tells us to stop the validation for this key, we must exit the key cycle
-                // so the other rules won't be executed.
-                if ($result->status === RuleResultStatus::FailedAndStopped) {
-                    break;
+                    // If the rule tells us to stop the validation for this key, we must exit the key cycle
+                    // so the other rules won't be executed.
+                    if ($result->status === RuleResultStatus::FailedAndStopped) {
+                        break;
+                    }
                 }
             }
         }
@@ -167,7 +183,7 @@ class Validator implements MiddlewareInterface
      * If you don't pass any translation provider, the default one will be used.
      *
      *
-     * @throws ValidationKeyFoundMultipleTimes
+     * @throws ValidationKeyFoundMultipleTimes|RuleInternalException
      */
     public function validate(
         array|ServerRequestInterface $inputs = [],
@@ -187,7 +203,7 @@ class Validator implements MiddlewareInterface
             $this->translationProvider = $translationProvider;
         }
 
-        return $this->parseValidation();
+        return $this->runValidation();
     }
 
     /**
@@ -198,7 +214,7 @@ class Validator implements MiddlewareInterface
      * the validator will use the translations from that provider.
      *
      *
-     * @throws ValidationKeyFoundMultipleTimes
+     * @throws ValidationKeyFoundMultipleTimes|RuleInternalException
      */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
@@ -217,7 +233,18 @@ class Validator implements MiddlewareInterface
     }
 
     /**
-     * @throws ValidationKeyFoundMultipleTimes
+     * This allows you to rapidly check for a single value instead of initializing as an array.
+     *
+     * @throws ValidationKeyFoundMultipleTimes|RuleInternalException
+     *
+     */
+    public static function inline(mixed $value, array $validators): ValidationResult
+    {
+        return (new self($value, $validators))->validate();
+    }
+
+    /**
+     * @throws ValidationKeyFoundMultipleTimes|RuleInternalException
      */
     public function __invoke(): ValidationResult
     {

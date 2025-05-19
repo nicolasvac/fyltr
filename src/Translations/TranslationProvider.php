@@ -2,9 +2,9 @@
 
 namespace Nicolasvac\Fyltr\Translations;
 
-use Nicolasvac\Fyltr\Rules\Rule;
+use Nicolasvac\Fyltr\Rules\RuleWithTranslations;
 
 interface TranslationProvider
 {
-    public function ruleErrorMessage(Rule $rule): string;
+    public function ruleTranslations(RuleWithTranslations $rule): array;
 }

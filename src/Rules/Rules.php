@@ -11,4 +11,20 @@ class Rules
             'args' => [],
         ];
     }
+
+    public static function int(): array
+    {
+        return [
+            'class' => IntegerRule::class,
+            'args' => [],
+        ];
+    }
+
+    public static function size(int|float|null $min = null, int|float|null $max = null): array
+    {
+        return [
+            'class' => SizeRule::class,
+            'args' => [$min, $max],
+        ];
+    }
 }

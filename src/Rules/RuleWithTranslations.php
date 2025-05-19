@@ -4,5 +4,11 @@ namespace Nicolasvac\Fyltr\Rules;
 
 interface RuleWithTranslations extends Rule
 {
-    public function setErrorMessage(string $message): void;
+    /**
+     * Sets the messages for the designated rule.
+     *
+     * @param array<string, string> $messages
+     * @return void
+     */
+    public function setTranslations(array $messages): void;
 }

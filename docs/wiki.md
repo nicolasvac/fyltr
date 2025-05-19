@@ -7,7 +7,9 @@ $translationProvider = new class implements \Nicolasvac\Fyltr\Translations\Trans
     public function ruleErrorMessage(Rule $rule): string
     {
         return match ($rule::class) {
-            \Nicolasvac\Fyltr\Rules\RequiredRule::class => 'The field :key: is required by our example.',
+            \Nicolasvac\Fyltr\Rules\RequiredRule::class => [
+                'errors.default' => 'The field :key: is required by our example.'
+            ],
         };
     }
 }
@@ -24,7 +26,7 @@ $validator = new \Nicolasvac\Fyltr\Validator(
 $result = $validator->validate();
 
 if ($result->successful()) {
-   echo 'Yeey! We passed.' 
+   echo 'Yey! We passed.' 
 } else {
    echo 'Oh no. We failed: ' . $result->errorsString(separator: '<br>');
 }
@@ -34,8 +36,29 @@ if ($result->successful()) {
 $result = $validator->validate(inputs: ['name' => 'Example!']);
 
 if ($result->successful()) {
-   echo 'Yeey! We passed.' 
+   echo 'Yey! We passed.' 
 } else {
    echo 'Oh no. We failed: ' . $result->errorsString(separator: '<br>');
 }
+
+die();
+```
+
+## Inline standalone usage example
+
+```php
+<?php
+
+use Nicolasvac\Fyltr\Rules\Rules;
+use Nicolasvac\Fyltr\Validator;
+
+$data = 4;
+
+if (Validator::inline($data, [Rules::int()])->successful()) {
+    echo "It's an integer!";
+} else {
+    echo "It's not an integer!";
+}
+
+die();
 ```

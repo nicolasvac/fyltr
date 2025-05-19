@@ -11,10 +11,10 @@ final class RequiredRuleTest extends TestCase
     {
         $fyltr = new Validator(
             inputs: [
-                'name' => 'Nicolas',
+                'v' => 'Nicolas',
             ],
             validators: [
-                'name' => [Rules::required()]
+                'v' => [Rules::required()]
             ]
         );
 
@@ -25,10 +25,10 @@ final class RequiredRuleTest extends TestCase
     {
         $fyltr = new Validator(
             inputs: [
-                'name' => '',
+                'v' => '',
             ],
             validators: [
-                'name' => [Rules::required()]
+                'v' => [Rules::required()]
             ]
         );
 
@@ -39,10 +39,10 @@ final class RequiredRuleTest extends TestCase
     {
         $fyltr = new Validator(
             inputs: [
-                'name' => null,
+                'v' => null,
             ],
             validators: [
-                'name' => [Rules::required()]
+                'v' => [Rules::required()]
             ]
         );
 
@@ -53,10 +53,10 @@ final class RequiredRuleTest extends TestCase
     {
         $fyltr = new Validator(
             inputs: [
-                'name' => 1,
+                'v' => 1,
             ],
             validators: [
-                'name' => [Rules::required()]
+                'v' => [Rules::required()]
             ]
         );
 
@@ -67,10 +67,10 @@ final class RequiredRuleTest extends TestCase
     {
         $fyltr = new Validator(
             inputs: [
-                'name' => false,
+                'v' => false,
             ],
             validators: [
-                'name' => [Rules::required()]
+                'v' => [Rules::required()]
             ]
         );
 
